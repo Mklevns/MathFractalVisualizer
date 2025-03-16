@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Performance Fractal Visualization</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <!-- Feather Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="py-3 mb-3 text-center">
+            <h1>Dynamic Fractal Visualization</h1>
+            <p class="lead">Exploring chaotic patterns and emergent behavior</p>
+        </header>
+        
+        <div class="row">
+            <!-- Main Visualization Area -->
+            <div class="col-lg-8">
+                <div class="fractal-container bg-dark rounded p-2 mb-3" id="fractalContainer">
+                    <canvas id="fractalCanvas" class="fractal-canvas"></canvas>
+                    <button id="fullscreenBtn" class="btn btn-outline-light fullscreen-btn" title="Toggle fullscreen">
+                        <i data-feather="maximize"></i>
+                    </button>
+                    
+                    <!-- Stats overlay -->
+                    <div class="stats-overlay">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-dark me-2">FPS: <span id="fpsDisplay">0</span></span>
+                            <span id="rendererInfo" class="badge bg-secondary me-2">Canvas 2D</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Animation Control Buttons -->
+                <div class="animation-controls bg-dark rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between flex-wrap">
+                        <div class="d-flex gap-2 mb-2">
+                            <button id="startBtn" class="btn btn-success">
+                                <i data-feather="play"></i> Start
+                            </button>
+                            <button id="stopBtn" class="btn btn-danger" disabled>
+                                <i data-feather="pause"></i> Stop
+                            </button>
+                            <button id="resetBtn" class="btn btn-secondary">
+                                <i data-feather="refresh-cw"></i> Reset
+                            </button>
+                        </div>
+                        <div class="d-flex gap-2 mb-2">
+                            <button id="applyBtn" class="btn btn-primary">
+                                <i data-feather="check-circle"></i> Apply Changes
+                            </button>
+                            <button id="randomizeBtn" class="btn btn-info">
+                                <i data-feather="shuffle"></i> Randomize
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- About the visualization -->
+                <div class="explanation bg-dark rounded p-3 mb-3">
+                    <h3>About This Visualization</h3>
+                    <p>This application visualizes dynamically generated fractal-like patterns using a custom algorithm that applies chaotic rules to a grid of values. The patterns emerge from:</p>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="feature-card">
+                                <i data-feather="grid" class="feature-icon"></i>
+                                <h5>Neighborhood Interactions</h5>
+                                <p>Each cell's value is influenced by surrounding cells</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-card">
+                                <i data-feather="clock" class="feature-icon"></i>
+                                <h5>Temporal Modulation</h5>
+                                <p>Time-based sinusoidal patterns affect intensity</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-card">
+                                <i data-feather="move" class="feature-icon"></i>
+                                <h5>Spatial Distortion</h5>
+                                <p>Warps space with trigonometric functions</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- All Controls Panel -->
+            <div class="col-lg-4">
+                <div class="controls-panel bg-dark rounded p-0">
+                    <!-- Tabbed interface for controls -->
+                    <ul class="nav nav-tabs nav-fill" id="controlsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic-settings" 
+                                    type="button" role="tab" aria-controls="basic-settings" aria-selected="true">
+                                <i data-feather="sliders" class="tab-icon"></i> Basic
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-settings" 
+                                    type="button" role="tab" aria-controls="advanced-settings" aria-selected="false">
+                                <i data-feather="settings" class="tab-icon"></i> Advanced
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="visual-tab" data-bs-toggle="tab" data-bs-target="#visual-settings" 
+                                    type="button" role="tab" aria-controls="visual-settings" aria-selected="false">
+                                <i data-feather="eye" class="tab-icon"></i> Visual
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-panel" 
+                                    type="button" role="tab" aria-controls="info-panel" aria-selected="false">
+                                <i data-feather="info" class="tab-icon"></i> Info
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab contents -->
+                    <div class="tab-content p-3" id="controlsTabContent">
+                        <!-- Basic Settings Tab -->
+                        <div class="tab-pane fade show active" id="basic-settings" role="tabpanel" aria-labelledby="basic-tab">
+                            <div class="mb-3">
+                                <label for="sizeRange" class="form-label d-flex justify-content-between">
+                                    <span>Grid Size</span>
+                                    <span id="sizeValue" class="badge bg-primary">40</span>
+                                </label>
+                                <input type="range" class="form-range" id="sizeRange" min="20" max="100" value="40">
+                                <small class="text-muted d-block">Larger sizes may affect performance</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="iterationsRange" class="form-label d-flex justify-content-between">
+                                    <span>Iterations</span>
+                                    <span id="iterationsValue" class="badge bg-primary">50</span>
+                                </label>
+                                <input type="range" class="form-range" id="iterationsRange" min="10" max="100" value="50">
+                                <small class="text-muted d-block">Higher values create more complex patterns</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="speedRange" class="form-label d-flex justify-content-between">
+                                    <span>Animation Speed</span>
+                                    <span id="speedValue" class="badge bg-primary">50%</span>
+                                </label>
+                                <input type="range" class="form-range" id="speedRange" min="10" max="100" value="50">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="patternType" class="form-label">Pattern Type</label>
+                                <select class="form-select" id="patternType">
+                                    <option value="chaotic" selected>Chaotic</option>
+                                    <option value="cellular">Cellular</option>
+                                    <option value="wave">Wave-based</option>
+                                    <option value="spiral">Spiral</option>
+                                    <option value="mandelbrot">Mandelbrot-like</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="colorScheme" class="form-label">Color Scheme</label>
+                                <select class="form-select" id="colorScheme">
+                                    <option value="blue" selected>Blue-Cyan (Default)</option>
+                                    <option value="green">Green-Yellow</option>
+                                    <option value="purple">Purple-Pink</option>
+                                    <option value="fire">Fire (Red-Yellow)</option>
+                                    <option value="grayscale">Grayscale</option>
+                                    <option value="rainbow">Rainbow</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Advanced Settings Tab -->
+                        <div class="tab-pane fade" id="advanced-settings" role="tabpanel" aria-labelledby="advanced-tab">
+                            <div class="mb-3">
+                                <label for="complexityRange" class="form-label d-flex justify-content-between">
+                                    <span>Pattern Complexity</span>
+                                    <span id="complexityValue" class="badge bg-primary">5</span>
+                                </label>
+                                <input type="range" class="form-range" id="complexityRange" min="1" max="10" value="5">
+                                <small class="text-muted d-block">Controls the detail level of patterns</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="turbulenceRange" class="form-label d-flex justify-content-between">
+                                    <span>Turbulence</span>
+                                    <span id="turbulenceValue" class="badge bg-primary">3</span>
+                                </label>
+                                <input type="range" class="form-range" id="turbulenceRange" min="0" max="10" value="3">
+                                <small class="text-muted d-block">Adds randomness to the patterns</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="symmetryRange" class="form-label d-flex justify-content-between">
+                                    <span>Symmetry</span>
+                                    <span id="symmetryValue" class="badge bg-primary">0</span>
+                                </label>
+                                <input type="range" class="form-range" id="symmetryRange" min="0" max="10" value="0">
+                                <small class="text-muted d-block">Higher values create mirror-like effects</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="waveSpeedRange" class="form-label d-flex justify-content-between">
+                                    <span>Wave Speed</span>
+                                    <span id="waveSpeedValue" class="badge bg-primary">5</span>
+                                </label>
+                                <input type="range" class="form-range" id="waveSpeedRange" min="1" max="10" value="5">
+                                <small class="text-muted d-block">Controls the rate of pattern evolution</small>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="interactiveToggle">
+                                    <label class="form-check-label" for="interactiveToggle">
+                                        Interactive Mode
+                                    </label>
+                                    <small class="text-muted d-block">Click on the fractal to add patterns</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Visual Settings Tab -->
+                        <div class="tab-pane fade" id="visual-settings" role="tabpanel" aria-labelledby="visual-tab">
+                            <div class="mb-3">
+                                <label for="renderingStyle" class="form-label">Rendering Style</label>
+                                <select class="form-select" id="renderingStyle">
+                                    <option value="blocks" selected>Blocks & Textures</option>
+                                    <option value="points">Points</option>
+                                    <option value="lines">Lines</option>
+                                    <option value="areas">Shaded Areas</option>
+                                    <option value="3d">3D Visualization</option>
+                                </select>
+                                <small class="text-muted d-block">Different ways to visualize fractal data</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="postProcessingEffect" class="form-label">Visual Effect</label>
+                                <select class="form-select" id="postProcessingEffect">
+                                    <option value="none" selected>None</option>
+                                    <option value="glow">Glow</option>
+                                    <option value="blur">Blur</option>
+                                    <option value="edge">Edge Detection</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="effectIntensityRange" class="form-label d-flex justify-content-between">
+                                    <span>Effect Intensity</span>
+                                    <span id="effectIntensityValue" class="badge bg-primary">5</span>
+                                </label>
+                                <input type="range" class="form-range" id="effectIntensityRange" min="1" max="10" value="5">
+                            </div>
+                            
+                            <div class="renderer-options">
+                                <div class="card bg-dark-subtle mb-3">
+                                    <div class="card-header">Renderer Options</div>
+                                    <div class="card-body">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="webglToggle" checked disabled>
+                                            <label class="form-check-label" for="webglToggle">
+                                                Use WebGL Renderer
+                                            </label>
+                                            <small class="text-muted d-block">Hardware-accelerated rendering (not available)</small>
+                                        </div>
+                                        
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="lodToggle" checked disabled>
+                                            <label class="form-check-label" for="lodToggle">
+                                                Level of Detail (LOD)
+                                            </label>
+                                            <small class="text-muted d-block">Optimize large fractals (requires WebGL)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Info Tab -->
+                        <div class="tab-pane fade" id="info-panel" role="tabpanel" aria-labelledby="info-tab">
+                            <div class="info-cards">
+                                <div class="card bg-dark-subtle mb-3">
+                                    <div class="card-header">Current Parameters</div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <p class="mb-2"><strong>Seed:</strong> <span id="seedDisplay">0</span></p>
+                                                <p class="mb-2"><strong>Time Factor:</strong> <span id="timeFactorDisplay">0.0</span></p>
+                                            </div>
+                                            <div class="col-6">
+                                                <p class="mb-2"><strong>Distortion:</strong> <span id="distortionDisplay">5.0</span></p>
+                                                <p class="mb-2"><strong>Mode:</strong> Canvas 2D</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card bg-dark-subtle">
+                                    <div class="card-header">Tips</div>
+                                    <div class="card-body">
+                                        <p>• Higher complexity creates more detailed patterns</p>
+                                        <p>• Use interactive mode to click and add your own patterns</p>
+                                        <p>• Try the 3D visualization for depth perception</p>
+                                        <p>• Combining post-processing effects with different rendering styles creates unique visuals</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <!-- WebGL Renderer -->
+    <script src="{{ url_for('static', filename='js/fractal-webgl.js') }}"></script>
+    <!-- Main Fractal Script -->
+    <script src="{{ url_for('static', filename='js/fractal_alt.js') }}"></script>
+    <script>
+        // Initialize Feather icons
+        document.addEventListener('DOMContentLoaded', () => {
+            feather.replace();
+        });
+    </script>
+</body>
+</html>
